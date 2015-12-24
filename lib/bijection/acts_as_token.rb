@@ -3,18 +3,21 @@ module Bijection
     extend ActiveSupport::Concern
 
     included do
-      sequence = ENV['token_char_base'] ||
-        "XUVDB53RFj8SrgbyTfMkCQ2d7wHYizmu0Alsn6OoGvcIP9xNWe4tKh1qpEJaLZ"
-        # (('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a).shuffle.join.split(//) # 62
-      ALPHABET = sequence.split(//)
-      token_length = ENV['token_length'] || 5
-      SHIFTNUMBER = 62**(token_length - 1)
     end
 
     module ClassMethods
+      attr_accessor :alphabet, :shiftnumber
       def acts_as_token(options = {})
         cattr_accessor :token_string_field
         self.token_string_field = (options[:token_string_field] || :slug).to_s
+
+        sequence = options[:char_base] ||
+          "XUVDB53RFj8SrgbyTfMkCQ2d7wHYizmu0Alsn6OoGvcIP9xNWe4tKh1qpEJaLZ"
+        # (('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a).shuffle.join.split(//) # 62
+        self.alphabet = sequence.split(//)
+        token_length = options[:token_length] || 5
+        self.shiftnumber = 62**(token_length - 1)
+
       end
 
       def generate_shortener_token(record)
@@ -39,13 +42,13 @@ module Bijection
       end
 
       def encode(seed)
-        seed += SHIFTNUMBER
-        return ALPHABET[0] if seed == 0
+        seed += self.shiftnumber
+        return self.alphabet[0] if seed == 0
         token = ''
-        base = ALPHABET.length
+        base = self.alphabet.length
 
         while seed > 0
-          token << ALPHABET[seed.modulo(base)]
+          token << self.alphabet[seed.modulo(base)]
           seed /= base
         end
         token.reverse
@@ -53,17 +56,17 @@ module Bijection
 
       def decode(token)
         seed = 0
-        base = ALPHABET.length
-        token.each_char { |c| seed = seed * base + ALPHABET.index(c) }
-        seed -= SHIFTNUMBER
+        base = self.alphabet.length
+        token.each_char { |c| seed = seed * base + self.alphabet.index(c) }
+        seed -= self.shiftnumber
       end
 
       def alphabets
-        ALPHABET.join
+        self.alphabet.join
       end
 
       def shift_number
-        SHIFTNUMBER
+        self.shiftnumber
       end
 
     end
