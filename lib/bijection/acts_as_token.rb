@@ -4,11 +4,11 @@ module Bijection
 
     included do
     end
-
+    # HOW TO protect alphabet being changed
     module ClassMethods
-      attr_accessor :alphabet, :shiftnumber
+
       def acts_as_token(options = {})
-        cattr_accessor :token_string_field
+        cattr_accessor :token_string_field, :alphabet, :shiftnumber
         self.token_string_field = (options[:token_string_field] || :slug).to_s
 
         sequence = options[:char_base] ||
@@ -17,7 +17,6 @@ module Bijection
         self.alphabet = sequence.split(//)
         token_length = options[:token_length] || 5
         self.shiftnumber = 62**(token_length - 1)
-
       end
 
       def generate_shortener_token(record)
